@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "videojs-resolution-switcher": "^0.4.2"
+  }
+}
