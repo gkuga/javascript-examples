@@ -1,14 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html, body {
+	margin: 0;
+  padding: 0;
+}
+canvas {
+border: 1px solid black;
+display: block;
+width: 500px;
+height: 500px;
+}
+</style>
 </head>
 <body>
+
 <canvas id="canvas"></canvas>
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 ctx.fillStyle = "green";
 ctx.fillRect(20, 10, 150, 100);
+</script>
+
+<canvas id="canvas2"></canvas>
+<script>
+const canvas2 = document.getElementById("canvas2");
+const ctx2 = canvas2.getContext("2d");
+const gradient2 = ctx2.createLinearGradient(20, 0, 220, 90);
+gradient2.addColorStop(0, "green");
+gradient2.addColorStop(0.5, "cyan");
+gradient2.addColorStop(1, "green");
+ctx2.fillStyle = gradient2;
+ctx2.fillRect(20, 20, 200, 100);
+</script>
+
+<canvas id="canvas3"></canvas>
+<script>
+const circle = document.getElementById("canvas3");
+const ctx3 = circle.getContext('2d');
+const blur = 15;
+const r = 25
+const r2 = r + blur;
+circle.width = circle.height = r2 * 2;
+ctx3.shadowOffsetX = ctx.shadowOffsetY = r2 * 2;
+ctx3.shadowBlur = blur;
+ctx3.shadowColor = 'black';
+ctx3.beginPath();
+ctx3.arc(r2, r2, r, 0, Math.PI * 2, true);
+ctx3.closePath();
+ctx3.fillStyle = "green";
+ctx3.fill();
+</script>
+
+<canvas id="canvas4"></canvas>
+<script>
+const canvas4 = document.getElementById("canvas4");
+const ctx4 = canvas4.getContext("2d");
+ctx4.globalAlpha = 0.5;
+ctx4.fillStyle = "green";
+ctx4.fillRect(20, 10, 150, 100);
+ctx4.drawImage(canvas, 50, 50);
+for (let i = 0; i < 7; i++) {
+  ctx4.beginPath();
+  ctx4.arc(75, 75, 10 + 10 * i, 0, Math.PI * 2, true);
+  ctx4.fill();
+}
 </script>
 </body>
 </html>
