@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MutationObserver Example</title>
+</head>
+<body>
+  <h1>MutationObserver サンプル</h1>
+  <div id="target-id">
+    <p>この子ノードが監視対象です。</p>
+  </div>
+  <button id="change-attribute">属性を変更する</button>
+  <button id="add-child">子ノードを追加する</button>
+  <button id="remove-child">子ノードを削除する</button>
+  <script>
+    const targetNode = document.getElementById("target-id");
+    const config = { attributes: true, childList: true, subtree: true };
+    const callback = (mutationList, observer) => {
+      for (const mutation of mutationList) {
+        if (mutation.type === "childList") {
+          console.log("子ノードが追加または削除されました。");
+        } else if (mutation.type === "attributes") {
+          console.log(`${mutation.attributeName} 属性が変更されました。`);
+        }
+      }
+    };
+    const observer = new MutationObserver(callback);
+    observer.observe(targetNode, config);
+    document.getElementById("change-attribute").addEventListener("click", () => {
+      targetNode.setAttribute("data-example", "変更されました");
+    });
+    document.getElementById("add-child").addEventListener("click", () => {
+      const newChild = document.createElement("p");
+      newChild.textContent = "新しい子ノードが追加されました。";
+      targetNode.appendChild(newChild);
+    });
+    document.getElementById("remove-child").addEventListener("click", () => {
+      if (targetNode.lastElementChild) {
+        targetNode.removeChild(targetNode.lastElementChild);
+      }
+    });
+  </script>
+</body>
+</html>
