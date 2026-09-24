@@ -2,20 +2,24 @@
 
 /* The contract, and one set of default values.
  *
- * Nothing in this file knows that stores exist. These names are all the client
- * ever learns; the values below are only the fallback used when no store has
- * been resolved.
+ * Nothing here knows that stores exist. These names are all the client ever
+ * learns; the values are the fallback used when no store was resolved.
  *
- * `@theme` (not `@theme inline`) is what makes this work: utilities compile to
- * `var(--color-brand)` rather than to the value, so overriding `:root` later —
- * from the server, per request — changes every utility at once.
+ * `@theme` and not `@theme inline`: utilities compile to `var(--color-brand)`
+ * rather than to the value, so a `:root` override from the server changes every
+ * utility at once. `inline` would bake the value in and break the mechanism.
+ *
+ * Only these seven are store-controlled. The spacing scale, the type scale, the
+ * breakpoints and the shadows stay at Tailwind's defaults, shared by every
+ * store — which is the point: branding is theirs, layout is not.
  */
 @theme {
-  --color-brand: #64748b;
-  --color-brand-ink: #ffffff;
-  --color-surface: #f8fafc;
-  --color-ink: #0f172a;
-  --color-muted: #64748b;
+  --color-brand: oklch(0.55 0.02 260);
+  --color-brand-ink: oklch(0.99 0 0);
+  --color-surface: oklch(0.98 0.002 260);
+  --color-card: oklch(1 0 0);
+  --color-ink: oklch(0.22 0.01 260);
+  --color-muted: oklch(0.55 0.01 260);
 
   --radius-card: 0.5rem;
 

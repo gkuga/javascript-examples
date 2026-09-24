@@ -13,10 +13,11 @@ import {join} from 'node:path';
 
 const SLUGS = ['acme-coffee', 'beta-books', 'unreleased-secret'];
 const NAMES = ['Acme Coffee', 'Beta Books', 'Unreleased Secret'];
+// Each store's light brand value, verbatim from lib/tokens.server.js.
 const BRAND = {
-  'acme-coffee': '#7c3aed',
-  'beta-books': '#0f766e',
-  'unreleased-secret': '#b91c1c',
+  'acme-coffee': 'oklch(0.55 0.21 295)',
+  'beta-books': 'oklch(0.52 0.10 185)',
+  'unreleased-secret': 'oklch(0.52 0.20 25)',
 };
 
 const PORT = 3789;
@@ -116,6 +117,38 @@ if (!(await waitForServer())) {
   const onHome = SLUGS.filter(s => home.includes(s));
   if (onHome.length === 0) ok('the unbranded page names no store');
   else bad(`the unbranded page named: ${onHome.join(', ')}`);
+
+  console.log('\n3. the override actually wins the cascade\n');
+
+  // The injected <style> lands in <head> *before* the stylesheet link, so on
+  // source order alone Tailwind's defaults would overwrite the store's values.
+  // They do not, because @theme compiles into `@layer theme` and unlayered
+  // declarations outrank layered ones whatever the order. Both halves of that
+  // are asserted here: lose either and the page silently renders the default
+  // brand while every other check still passes.
+  const themeCss = assets.find(f => f.endsWith('.css'));
+
+  if (themeCss === undefined) {
+    bad('no stylesheet found to inspect');
+  } else {
+    const text = await readFile(themeCss, 'utf8');
+    const at = text.indexOf('--color-brand:');
+    const openers = [...text.slice(0, at).matchAll(/@layer [a-z, ]+\{/g)];
+    const last = openers.at(-1)?.[0];
+
+    if (last === '@layer theme{') {
+      ok('Tailwind emits the theme variables inside @layer theme');
+    } else {
+      bad(`theme variables are not in @layer theme (found: ${last ?? 'no layer'})`);
+    }
+
+    const page = await (await fetch(`http://127.0.0.1:${PORT}/${SLUGS[0]}`)).text();
+    const tag = page.match(/<style id="store-theme"[^>]*>([\s\S]*?)<\/style>/);
+
+    if (tag === null) bad('no injected <style id="store-theme"> in the response');
+    else if (tag[1].includes('@layer')) bad('the injected override is layered, so it would lose');
+    else ok('the injected override is unlayered, so it outranks @layer theme');
+  }
 }
 
 server.kill();

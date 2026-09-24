@@ -1,9 +1,6 @@
 import Head from 'next/head';
 import {fetchStore, toCssText} from '../lib/tokens.server';
 
-// The server resolves the store from the path and hands back that store's token
-// values. `fetchStore` is reachable only from here, so it never reaches the
-// client bundle.
 export async function getServerSideProps({params}) {
   const store = await fetchStore(params.store);
 
@@ -11,51 +8,131 @@ export async function getServerSideProps({params}) {
     return {notFound: true};
   }
 
-  return {props: {name: store.name, css: toCssText(store.tokens)}};
+  return {
+    props: {
+      name: store.name,
+      tagline: store.tagline,
+      products: store.products,
+      css: toCssText(store),
+    },
+  };
 }
 
-export default function StorePage({name, css}) {
+export default function StorePage({name, tagline, products, css}) {
   return (
     <>
       <Head>
         <title>{name}</title>
-        {/* The whole theme switch. One store's values, inlined in the first
-            response, so the page paints branded with no round trip and no
-            flash of the default. */}
+        {/* The whole theme switch: one store's values, light and dark, inlined
+            in the first response. Everything below is store-agnostic markup. */}
         <style id="store-theme">{css}</style>
       </Head>
 
-      <main className="min-h-screen bg-surface px-6 py-16 font-display text-ink">
-        <div className="mx-auto max-w-xl">
-          <p className="text-sm text-muted">Storefront</p>
-          <h1 className="mt-1 text-3xl font-semibold">{name}</h1>
-
-          <div className="mt-8 rounded-card bg-brand p-6 text-brand-ink">
-            <h2 className="text-lg font-semibold">Every utility moved</h2>
-            <p className="mt-2 text-sm opacity-90">
-              Nothing on this page names a store. These are the same classes the
-              other storefronts use — <code>bg-brand</code>,{' '}
-              <code>rounded-card</code>, <code>text-ink</code> — resolving
-              against variables the server set a moment ago.
-            </p>
+      <div className="min-h-screen bg-surface font-display text-ink antialiased">
+        <header className="sticky top-0 z-10 border-b border-muted/15 bg-surface/80 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+            <span className="text-sm font-semibold tracking-tight">{name}</span>
+            <nav className="flex items-center gap-1">
+              {['Shop', 'About'].map(label => (
+                <a
+                  key={label}
+                  href="#"
+                  className="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:bg-brand/10 hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+                >
+                  {label}
+                </a>
+              ))}
+              <a
+                href="#"
+                className="ml-2 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-brand-ink transition hover:opacity-90 active:scale-95 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+              >
+                Cart
+              </a>
+            </nav>
           </div>
+        </header>
 
-          <div className="mt-4 rounded-card border border-muted/30 bg-white/60 p-6">
-            <h2 className="text-lg font-semibold">What shipped to get here</h2>
-            <ul className="mt-2 space-y-1 text-sm text-muted">
-              <li>One CSS file, shared by every store, cacheable across all of them.</li>
-              <li>One <code>&lt;style&gt;</code> tag, this store only.</li>
-              <li>No theme JavaScript, and no list of stores.</li>
+        <main className="mx-auto max-w-5xl px-6 pb-24">
+          <section className="grid gap-8 py-14 md:grid-cols-[1.2fr_1fr] md:items-center">
+            <div>
+              <p className="inline-flex rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
+                Storefront
+              </p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                {tagline}
+              </h1>
+              <p className="mt-4 max-w-prose text-muted">
+                Every class on this page is shared with every other storefront.
+                Only the custom properties differ, and they arrived with the
+                HTML.
+              </p>
+            </div>
+            <div className="rounded-card bg-brand p-8 text-brand-ink shadow-lg shadow-brand/20">
+              <p className="text-sm/6 opacity-90">
+                <code>bg-brand</code>, <code>shadow-brand/20</code> and{' '}
+                <code>rounded-card</code> all resolve through variables the
+                server set — including the opacity, via{' '}
+                <code>color-mix()</code>.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold">Catalogue</h2>
+              <span className="text-sm text-muted">{products.length} items</span>
+            </div>
+
+            <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map(p => (
+                <li key={p.name} className="group">
+                  <a
+                    href="#"
+                    className="flex h-full flex-col rounded-card border border-muted/15 bg-card p-5 transition duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-medium group-hover:text-brand">
+                        {p.name}
+                      </h3>
+                      {p.badge != null && (
+                        <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
+                          {p.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted">{p.note}</p>
+                    <p className="mt-4 font-semibold tabular-nums">{p.price}</p>
+                  </a>
+                </li>
+              ))}
             </ul>
-          </div>
+          </section>
 
-          <p className="mt-8 text-sm text-muted">
-            Change the slug in the URL to see another one. Run{' '}
-            <code>npm run verify</code> to check the build never learned their
-            names.
-          </p>
-        </div>
-      </main>
+          <section className="mt-14 rounded-card border border-muted/15 bg-card p-6">
+            <h2 className="font-semibold">What is store-controlled, and what is not</h2>
+            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="font-medium">From the API, per store</dt>
+                <dd className="mt-1 text-muted">
+                  Brand palette, surface and ink, card radius — light and dark.
+                  Seven variables.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium">Shared, in the build</dt>
+                <dd className="mt-1 text-muted">
+                  Spacing and type scales, breakpoints, shadows, transitions,
+                  every layout decision on this page.
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-sm text-muted">
+              A store can look unmistakably like itself without being able to
+              break the layout, because the scales were never theirs to set.
+            </p>
+          </section>
+        </main>
+      </div>
     </>
   );
 }

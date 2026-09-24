@@ -62,6 +62,51 @@ It also means the shared stylesheet stays identical for every store, so it
 caches once across all of them. The only per-store bytes are ~200 in the HTML,
 which is per-store anyway.
 
+## What Tailwind is actually for here
+
+The theming is the small part. Seven variables change per store; everything else
+on the page — the responsive grid, the spacing rhythm, the hover and focus
+states, the transitions — is shared, and that is the part Tailwind carries.
+
+Three things it does that plain CSS variables do not:
+
+**Opacity modifiers follow the runtime value.** `bg-brand/10` does not need a
+second variable:
+
+```css
+.bg-brand\/10{background-color:#6b727e1a}
+@supports (color:color-mix(in lab, red, red)){
+  .bg-brand\/10{background-color:color-mix(in oklab, var(--color-brand) 10%, transparent)}
+}
+```
+
+The `color-mix()` form references the variable, so a tint of the brand tracks
+whatever the server injected. The literal above it is the fallback for browsers
+without `color-mix`, and it carries the *default* brand — worth knowing, though
+every current browser takes the second rule.
+
+**Variants compose over themed values.** `hover:bg-brand/90`,
+`focus-visible:ring-brand/40`, `group-hover:text-brand`, `sm:grid-cols-2
+lg:grid-cols-3`, `dark:` — all of it resolves through the same variables, and
+none of it is code you maintain.
+
+**The scale is not the store's to change.** Spacing, type, breakpoints and
+shadows stay in the build at Tailwind's defaults. A store gets brand, surface,
+ink and a radius. It can look unmistakably like itself and still cannot break
+the layout, because the scales were never handed over.
+
+## Why the override wins
+
+The injected `<style>` lands in `<head>` *before* the stylesheet link, so on
+source order alone Tailwind's defaults would overwrite it. They do not:
+`@theme` compiles into `@layer theme`, and **unlayered declarations outrank
+layered ones regardless of order.** The injected block is unlayered, so it wins
+wherever it sits.
+
+That is structural rather than lucky, which is why `verify.mjs` asserts both
+halves. Lose either and the page renders the default brand while every other
+check still passes.
+
 ## What `npm run verify` checks
 
 1. **The build is store-agnostic.** No slug, store name or store colour appears
@@ -69,6 +114,9 @@ which is per-store anyway.
 2. **A response carries exactly one store.** Each storefront returns its own
    values and no trace of another — including `unreleased-secret`, which exists
    to make an accidental leak visible.
+3. **The override wins the cascade.** Tailwind's theme is inside `@layer theme`
+   and the injected block is not, which is what makes the order in `<head>`
+   irrelevant.
 
 The first run of this example **failed**, because `pages/index.js` used two real
 slugs as example links in its copy. Two words in prose put both store names into
