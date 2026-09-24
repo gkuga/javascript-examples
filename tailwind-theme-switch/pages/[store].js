@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import {fetchStore, toCssText} from '../lib/tokens.server';
+import {layoutFor} from '../components/layouts';
 
 export async function getServerSideProps({params}) {
   const store = await fetchStore(params.store);
@@ -13,12 +14,16 @@ export async function getServerSideProps({params}) {
       name: store.name,
       tagline: store.tagline,
       products: store.products,
+      layout: store.layout,
       css: toCssText(store),
     },
   };
 }
 
-export default function StorePage({name, tagline, products, css}) {
+export default function StorePage({name, tagline, products, layout, css}) {
+  // Picked by name, from a closed set. Nothing here knows which store asked.
+  const Catalogue = layoutFor(layout);
+
   return (
     <>
       <Head>
@@ -80,32 +85,12 @@ export default function StorePage({name, tagline, products, css}) {
           <section>
             <div className="flex items-baseline justify-between">
               <h2 className="text-lg font-semibold">Catalogue</h2>
-              <span className="text-sm text-muted">{products.length} items</span>
+              <span className="text-sm text-muted">
+                {products.length} items · {layout}
+              </span>
             </div>
 
-            <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map(p => (
-                <li key={p.name} className="group">
-                  <a
-                    href="#"
-                    className="flex h-full flex-col rounded-card border border-muted/15 bg-card p-5 transition duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-medium group-hover:text-brand">
-                        {p.name}
-                      </h3>
-                      {p.badge != null && (
-                        <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
-                          {p.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-muted">{p.note}</p>
-                    <p className="mt-4 font-semibold tabular-nums">{p.price}</p>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <Catalogue products={products} />
           </section>
 
           <section className="mt-14 rounded-card border border-muted/15 bg-card p-6">
@@ -115,14 +100,14 @@ export default function StorePage({name, tagline, products, css}) {
                 <dt className="font-medium">From the API, per store</dt>
                 <dd className="mt-1 text-muted">
                   Brand palette, surface and ink, card radius — light and dark.
-                  Seven variables.
+                  And which layout to use, by name.
                 </dd>
               </div>
               <div>
                 <dt className="font-medium">Shared, in the build</dt>
                 <dd className="mt-1 text-muted">
-                  Spacing and type scales, breakpoints, shadows, transitions,
-                  every layout decision on this page.
+                  The spacing and type scales, and all three layouts. The
+                  build ships every layout and knows no store.
                 </dd>
               </div>
             </dl>

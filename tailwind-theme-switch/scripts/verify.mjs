@@ -118,7 +118,48 @@ if (!(await waitForServer())) {
   if (onHome.length === 0) ok('the unbranded page names no store');
   else bad(`the unbranded page named: ${onHome.join(', ')}`);
 
-  console.log('\n3. the override actually wins the cascade\n');
+  console.log('\n3. layouts are shipped, stores are not\n');
+
+  // A store can ask for a structurally different page. The build ships every
+  // layout and learns none of the stores, because layouts are named for what
+  // they are rather than for whose they are.
+  const LAYOUT_OF = {
+    'acme-coffee': 'gallery',
+    'beta-books': 'editorial',
+    'unreleased-secret': 'grid',
+  };
+
+  const bundled = assets.filter(f => f.endsWith('.js'));
+  const shipped = [];
+  for (const file of bundled) {
+    const text = await readFile(file, 'utf8');
+    for (const l of ['gallery', 'editorial', 'grid']) {
+      if (text.includes(l) && !shipped.includes(l)) shipped.push(l);
+    }
+  }
+
+  if (shipped.length === 3) {
+    ok('all three layouts are in the bundle (that is fine — they name no store)');
+  } else {
+    bad(`expected 3 layouts in the bundle, found ${shipped.join(', ') || 'none'}`);
+  }
+
+  // Structure differs per store, which is the whole point of the exercise.
+  const marks = {gallery: 'aspect-4/3', editorial: 'divide-muted/15', grid: 'lg:grid-cols-3'};
+  for (const [slug, layout] of Object.entries(LAYOUT_OF)) {
+    const html = await (await fetch(`http://127.0.0.1:${PORT}/${slug}`)).text();
+    const own = marks[layout];
+    const foreign = Object.entries(marks)
+      .filter(([l]) => l !== layout)
+      .filter(([, m]) => html.includes(m))
+      .map(([l]) => l);
+
+    if (!html.includes(own)) bad(`/${slug} did not render the ${layout} layout`);
+    else if (foreign.length > 0) bad(`/${slug} also rendered: ${foreign.join(', ')}`);
+    else ok(`/${slug} rendered the ${layout} layout and only that`);
+  }
+
+  console.log('\n4. the override actually wins the cascade\n');
 
   // The injected <style> lands in <head> *before* the stylesheet link, so on
   // source order alone Tailwind's defaults would overwrite the store's values.

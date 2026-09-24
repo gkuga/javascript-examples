@@ -4,6 +4,10 @@
 // the client bundle. `scripts/verify.mjs` fails the example if any of these
 // slugs reaches a built asset.
 //
+// A store picks a layout by name — 'grid', 'editorial', 'gallery'. The build
+// ships all three; it never learns which store chose what, or that any store
+// exists. That mapping is data, and lives here.
+//
 // Note what a store is allowed to change: brand colours, a radius, a font. It
 // cannot touch the spacing or type scale — those stay in `@theme`, shared, so a
 // store can be unmistakably itself without being able to break the layout.
@@ -12,6 +16,7 @@ const STORES = {
   'acme-coffee': {
     name: 'Acme Coffee',
     tagline: 'Roasted the morning it ships',
+    layout: 'gallery',
     light: {
       '--color-brand': 'oklch(0.55 0.21 295)',
       '--color-brand-ink': 'oklch(0.99 0 0)',
@@ -42,6 +47,7 @@ const STORES = {
   'beta-books': {
     name: 'Beta Books',
     tagline: 'Second-hand, first-rate',
+    layout: 'editorial',
     light: {
       '--color-brand': 'oklch(0.52 0.10 185)',
       '--color-brand-ink': 'oklch(0.98 0.01 185)',
@@ -74,6 +80,7 @@ const STORES = {
   'unreleased-secret': {
     name: 'Unreleased Secret',
     tagline: 'Not announced yet',
+    layout: 'grid',
     light: {
       '--color-brand': 'oklch(0.52 0.20 25)',
       '--color-brand-ink': 'oklch(0.99 0 0)',

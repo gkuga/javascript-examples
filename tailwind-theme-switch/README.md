@@ -107,6 +107,46 @@ That is structural rather than lucky, which is why `verify.mjs` asserts both
 halves. Lose either and the page renders the default brand while every other
 check still passes.
 
+## When a store wants a different page, not a different colour
+
+Name the variant for **what it is**, never for **whose it is**.
+
+`components/layouts.js` ships three: `grid`, `editorial`, `gallery`. The API
+says which one a store uses. The build learns that three layouts exist; it
+learns nothing about any store, and the thousandth store needs no deploy.
+
+```js
+// lib/tokens.server.js — data, server-side
+{ name: 'Beta Books', layout: 'editorial', light: {...} }
+
+// pages/[store].js — a closed set, no store identity
+const Catalogue = layoutFor(layout);
+```
+
+Yes, every layout is in the bundle. That is the trade, and it is a good one:
+the names are `grid` and `gallery`, which give nothing away. Compare the
+alternative — `import(`./stores/${slug}`)` — where the chunks split per store
+but the *map of store names* ships to everyone.
+
+How far this goes:
+
+| what differs | how | leaks the store list |
+|---|---|---|
+| colour, radius, font | tokens from the API | no |
+| a component's treatment | a variant prop | no |
+| the whole page structure | a layout name from the API | no |
+| bespoke interactive features | its own deployment, consuming the shared package | no |
+| bespoke code inside this app | `import()` per store | **yes** |
+
+The fourth row is the honest answer for a store that needs genuinely custom
+behaviour — a booking flow nobody else has. Give it its own deployment. That
+build knows exactly one store because it *is* that store, so nothing leaks, and
+the shared storefront stays store-agnostic. It costs infrastructure, which is
+the right thing to spend when a store has genuinely left the shared product.
+
+The last row is the one to avoid. It is the only option here that tells every
+visitor which stores exist.
+
 ## What `npm run verify` checks
 
 1. **The build is store-agnostic.** No slug, store name or store colour appears
@@ -114,7 +154,10 @@ check still passes.
 2. **A response carries exactly one store.** Each storefront returns its own
    values and no trace of another — including `unreleased-secret`, which exists
    to make an accidental leak visible.
-3. **The override wins the cascade.** Tailwind's theme is inside `@layer theme`
+3. **Layouts ship, stores do not.** All three layouts are in the bundle, each
+   storefront renders exactly the one it asked for, and no store name is
+   anywhere near the build.
+4. **The override wins the cascade.** Tailwind's theme is inside `@layer theme`
    and the injected block is not, which is what makes the order in `<head>`
    irrelevant.
 
@@ -153,8 +196,9 @@ decision rather than a habit.
 
 ```
 styles/globals.css      the contract: names + defaults. Knows no store.
-lib/tokens.server.js    the fake API. Server-only; never bundled.
-pages/[store].js        resolves the store, inlines its values.
+lib/tokens.server.js    the fake API: tokens, catalogue, layout name.
+components/layouts.js   three layouts, named for what they are.
+pages/[store].js        resolves the store, inlines its values, picks a layout.
 pages/index.js          unbranded. Names no store, on purpose.
 scripts/verify.mjs      the two checks.
 ```
