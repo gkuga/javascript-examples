@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+/* The contract, and one set of default values.
+ *
+ * Nothing in this file knows that stores exist. These names are all the client
+ * ever learns; the values below are only the fallback used when no store has
+ * been resolved.
+ *
+ * `@theme` (not `@theme inline`) is what makes this work: utilities compile to
+ * `var(--color-brand)` rather than to the value, so overriding `:root` later —
+ * from the server, per request — changes every utility at once.
+ */
+@theme {
+  --color-brand: #64748b;
+  --color-brand-ink: #ffffff;
+  --color-surface: #f8fafc;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+
+  --radius-card: 0.5rem;
+
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+}
